@@ -15,15 +15,16 @@ class Slicer(object):
     def parse_cutouts(self, ret=False):
         '''
             Returns a list of cutouts from text. Cutout here is defined
-		    as a string starting with {: and and a matching :} in top level of nesting.
+            as a string starting with {: and and a matching :} in top level of nesting.
 
-			Simple approach doesn't work:
+            Simple approach doesn't work:
 
             >>> def re_show(pat, s):
                     print(re.compile(pat, re.M).sub("[\g<0>]", s.rstrip()))
+
             >>> re_show('{:(.*?):}','Hel{:Wonderful:}rld. And world {:two {: ha :} worlds:}.')
 
-			Wrong: Hel[{:Wonderful:}]rld. And world [{:two {: ha :}] worlds:}.
+            Wrong: Hel[{:Wonderful:}]rld. And world [{:two {: ha :}] worlds:}.
 
             The current approach works for me:
 
