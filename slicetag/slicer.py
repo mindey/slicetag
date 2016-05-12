@@ -4,7 +4,8 @@ class Slicer(object):
 
     def __init__(self, content=''):
         self.content = content
-        self.slices = []
+        self.cuts = []
+        self.tree = []
 
     def __str__(self):
         return self.content
@@ -12,13 +13,14 @@ class Slicer(object):
     def __repr__(self):
         return self.content
 
-    def parse_cutouts(self, ret=False):
+    def get_cuts(self, ret=False):
         '''
-            Returns a list of cutouts from text. Cutout here is defined
+            Returns a list of cuts from text. A cut here is defined
             as a string starting with {: and and a matching :} in top level of nesting.
 
             Simple approach doesn't work:
 
+            >>> import re
             >>> def re_show(pat, s):
                     print(re.compile(pat, re.M).sub("[\g<0>]", s.rstrip()))
 
@@ -29,7 +31,7 @@ class Slicer(object):
             The current approach works for me:
 
             >>> s = Slicer('Hel{:Wonderful:}rld. And world {:two {: ha :} worlds:}.')
-            >>> s.parse_cutouts()
+            >>> s.get_cuts()
             >>> s.slices
 
             Right: ['{:Wonderful:}', '{:two {: ha :} worlds:}']
@@ -37,7 +39,7 @@ class Slicer(object):
         '''
         count = 0
         start = False
-        result = []
+
         findall = lambda x, symbol: [content.start() for content in list(re.finditer(symbol, x))]
 
         for i in sorted(findall(self.content,'{:') + findall(self.content,':}')):
@@ -48,10 +50,19 @@ class Slicer(object):
             if not start and count == 1:
                 start = i
             if count == 0:
-                result.append(self.content[start:i]+':}')
+                self.cuts.append(self.content[start:i]+':}')
                 start = False
 
-        self.slices = result
+    def parse_cuts(self):
+        '''
+            A cut may have conditions, e.g., {:condition|content:}.
+            This method makes a list of tuples from self.cuts: [(condition, content), ...].
+        '''
+        for ix, cut in enumerate(self.cuts):
 
-        if ret:
-            return result
+            if '|' in cut and '{:' in cut and ':}' in cut:
+                self.tree += [ (cut[2:cut.index('|')], cut[cut.index('|')+1:-2]) ]
+            elif cut[:2] == '{:' and cut[-2:] == ':}':
+                self.tree += [ (False, cut[2:-2]) ]
+            else:
+                self.tree += [ (False, False) ]
